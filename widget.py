@@ -116,7 +116,7 @@ class Widget:
         return roll_values, optimal_moves
 
 
-def iter_possible_rolls(num_dice: int, num_faces: int) -> Generator[Roll]:
+def iter_possible_rolls(num_dice: int, num_faces: int) -> Generator[Roll, None, None]:
     if num_dice == 0:
         yield ()
         return
