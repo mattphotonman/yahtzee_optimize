@@ -92,7 +92,7 @@ class Widget:
                         optimal_moves[kept].update(moves)
 
         roll_values = {roll: value for roll, value in roll_values.items() if len(roll) == self.num_dice}
-        optimal_moves = {roll: moves for roll, moves in optimal_moves.items() if len(roll) == self.num_dice}
+        optimal_moves = {roll: list(moves) for roll, moves in optimal_moves.items() if len(roll) == self.num_dice}
 
         return roll_values, optimal_moves
 
