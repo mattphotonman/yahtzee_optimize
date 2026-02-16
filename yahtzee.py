@@ -70,9 +70,14 @@ score_functions.update(
 
 
 class YahtzeeOptimizer:
+    num_dice = 5
+    num_faces = 6
+    num_rolls = 3
+    upper_section_bonus_score = 63
 
     def __init__(self, saved_values_file: str | None = None):
         self.possible_upper_section_scores = self.compute_possible_upper_section_scores()
+        self.roll_category_scores = self.compute_roll_category_scores()
         if saved_values_file is None:
             self.state_values = self.compute_state_values()
         else:
@@ -85,35 +90,38 @@ class YahtzeeOptimizer:
         # For each possible bit vector of length 6, indicating which of the upper sections
         # are filled out, get the set of possible total scores for the upper section capped
         # at 63. Also, denote a range of possible scores with a tuple (min, max + 1).
-        max_score = 63
         possible_scores = {
-            (False,) * 6: (0, 1),
+            (False,) * cls.num_faces: (0, 1),
         }
-        for num_filled in range(1, 6):
-            for filled in itertools.combinations(range(1, 7), num_filled):
-                prev_scores = possible_scores[cls._to_bit_vector(filled[1:], 1, 7)]
+        for num_filled in range(1, cls.num_faces):
+            for filled in itertools.combinations(range(1, cls.num_faces + 1), num_filled):
+                prev_scores = possible_scores[cls._to_bit_vector(filled[1:], 1, cls.num_faces + 1)]
                 if isinstance(prev_scores, tuple):
                     prev_scores = range(*prev_scores)
                 scores = set().union(
                     *(
-                        range(prev_score, prev_score + filled[0] * 6, filled[0])
-                        if prev_score < max_score
-                        else [max_score]
+                        range(prev_score, prev_score + filled[0] * (cls.num_dice + 1), filled[0])
+                        if prev_score < cls.upper_section_bonus_score
+                        else [cls.upper_section_bonus_score]
                         for prev_score in prev_scores
                     )
                 )
-                scores = {min(score, max_score) for score in scores}
+                scores = {min(score, cls.upper_section_bonus_score) for score in scores}
                 lo, hi = min(scores), max(scores)
                 if len(scores) == hi - lo + 1:
                     scores = (lo, hi + 1)
-                possible_scores[cls._to_bit_vector(filled, 1, 7)] = scores
+                possible_scores[cls._to_bit_vector(filled, 1, cls.num_faces + 1)] = scores
 
         # Even though all scores from 0 to 63 are possible when all 6 upper sections are filled,
         # the value of the score doesn't matter in this case because you would have already received
         # the bonus, so we just set the possible scores to {0}.
-        possible_scores[(True,) * 6] = (0, 1)
+        possible_scores[(True,) * cls.num_faces] = (0, 1)
 
         return possible_scores
+
+    @classmethod
+    def compute_roll_category_scores(cls) -> dict[tuple[Roll, str], float]:
+        pass
 
     @staticmethod
     def _to_bit_vector(inds: tuple[int, ...], lo: int, hi: int) -> tuple[bool, ...]:
